@@ -8,7 +8,7 @@
 #include <math.h>
 
 #define DEBUG false
-#define DATASET_DIR "./"
+#define DATASET_DIR "/scratch/eecs498f21_class_root/eecs498f21_class/shared_data/GCN-gpu/"
 #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 #define MAX(X, Y) (((X) < (Y)) ? (Y) : (X))
 
