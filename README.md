@@ -1,2 +1,2 @@
 # GCN
-Graph Constitutional Network C implementation
+Graph Covolutional Network C implementation
