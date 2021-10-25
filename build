@@ -15,4 +15,4 @@ cmake ..
 make -j4
 cd ../
 
-echo "Successfully built $2"
+echo "Successfully built"

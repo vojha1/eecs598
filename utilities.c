@@ -68,11 +68,12 @@ feature_t feature_parser(spec_t spec_c, char* feature_f) {
 	feature_t feature_c;
 	int node_idx = 0;
 	int feature_idx = 0;
+	int i;
 
 	feature_c.feature_num = spec_c.features;
 	feature_c.node_num = spec_c.nodes;
 	feature_c.features = (float**) malloc ((spec_c.features) * sizeof(float*));
-	for (int i = 0; i < spec_c.features; ++i) {
+	for (i = 0; i < spec_c.features; ++i) {
 		feature_c.features[i] = (float*) malloc ((spec_c.nodes) * sizeof(float)); 
 	}
 
@@ -197,10 +198,11 @@ parameter_t parameter_parser(int input_nodes, int output_nodes, char* weight_f, 
 	parameter_t parameter_c;
 	int node_idx = 0;
 	int weight_idx = 0;
+	int i;
 
 	parameter_c.biasses = (float*) malloc (output_nodes * sizeof(float));
 	parameter_c.weights = (float**) malloc (input_nodes * sizeof(float*));
-	for (int i = 0; i < input_nodes; ++i) {
+	for (i = 0; i < input_nodes; ++i) {
 		parameter_c.weights[i] = (float*) malloc (output_nodes * sizeof(float));
 	}
 	parameter_c.in_feature_num = input_nodes;
@@ -264,10 +266,11 @@ void print_spec (spec_t spec_c) {
 }
 
 void print_features (feature_t feature_c) {
+	int i, j;
 	printf("features[%d][%d]: \n", feature_c.feature_num, feature_c.node_num);
-	for (int i = 0; i < MIN(4, feature_c.feature_num); ++i) {
+	for (i = 0; i < MIN(4, feature_c.feature_num); ++i) {
 		printf("\t");
-		for (int j = 0; j < MIN(4, feature_c.node_num); ++j) {
+		for (j = 0; j < MIN(4, feature_c.node_num); ++j) {
 			printf("%.2f\t", feature_c.features[i][j]);
 		}
 		if (feature_c.node_num > 4)
@@ -277,7 +280,7 @@ void print_features (feature_t feature_c) {
 	}
 	if (feature_c.feature_num > 4){
 		printf("\t.\n\t.\n\t.\n\t");
-		for (int j = 0; j < MIN(4, feature_c.node_num); ++j) {
+		for (j = 0; j < MIN(4, feature_c.node_num); ++j) {
 			printf("%.2f\t", feature_c.features[feature_c.feature_num-1][j]);
 		}
 		if (feature_c.node_num > 4)
@@ -288,8 +291,9 @@ void print_features (feature_t feature_c) {
 }
 
 void print_labels (spec_t spec_c, label_t label_c) {
+	int i;
 	printf("labels[%d]:\t", spec_c.nodes);
-	for (int i = 0; i < MIN(4, spec_c.nodes); ++i)
+	for (i = 0; i < MIN(4, spec_c.nodes); ++i)
 		printf("%d\t", label_c[i]);
 	if (spec_c.nodes > 4)
 		printf("...\t%d\n", label_c[spec_c.nodes-1]);
@@ -298,10 +302,11 @@ void print_labels (spec_t spec_c, label_t label_c) {
 }
 
 void print_graph (spec_t spec_c, graph_t graph_c) {
+	int i, j;
 	printf("neighbours[%d]: \n", spec_c.nodes);
-	for (int i = 0; i < MIN(4, spec_c.nodes); ++i) {
+	for (i = 0; i < MIN(4, spec_c.nodes); ++i) {
 		printf("[%d]:\t\t", i);
-		for (int j = graph_c.indexes[i]; j < MIN(graph_c.indexes[i] + 4, graph_c.indexes[i + 1]); ++j) {
+		for (j = graph_c.indexes[i]; j < MIN(graph_c.indexes[i] + 4, graph_c.indexes[i + 1]); ++j) {
 			printf("%d\t", graph_c.neighbours[j]);
 		}
 		if (graph_c.indexes[i + 1] > graph_c.indexes[i] + 4)
@@ -311,7 +316,7 @@ void print_graph (spec_t spec_c, graph_t graph_c) {
 	}
 	if (spec_c.nodes > 4){
 		printf(".\n.\n.\n[%d]:\t\t", spec_c.nodes - 1);
-		for (int j = graph_c.indexes[spec_c.nodes - 1]; j < MIN(graph_c.indexes[spec_c.nodes - 1] + 4, graph_c.indexes[spec_c.nodes]); ++j) {
+		for (j = graph_c.indexes[spec_c.nodes - 1]; j < MIN(graph_c.indexes[spec_c.nodes - 1] + 4, graph_c.indexes[spec_c.nodes]); ++j) {
 			printf("%d\t", graph_c.neighbours[j]);
 		}
 		if (graph_c.indexes[spec_c.nodes] > graph_c.indexes[spec_c.nodes - 1] + 4)
@@ -322,8 +327,9 @@ void print_graph (spec_t spec_c, graph_t graph_c) {
 }
 
 void print_parameter (parameter_t parameter_c) {
+	int i, j;
 	printf("biasses[%d]: \n\t", parameter_c.out_feature_num);
-	for (int i = 0; i < MIN(4, parameter_c.out_feature_num); ++i) {
+	for (i = 0; i < MIN(4, parameter_c.out_feature_num); ++i) {
 		printf("%.2f\t", parameter_c.biasses[i]);
 	}
 	if (parameter_c.out_feature_num > 4)
@@ -332,9 +338,9 @@ void print_parameter (parameter_t parameter_c) {
 		printf("\n");
 
 	printf("weights[%d][%d]: \n", parameter_c.in_feature_num, parameter_c.out_feature_num);
-	for (int i = 0; i < MIN(4, parameter_c.in_feature_num); ++i) {
+	for (i = 0; i < MIN(4, parameter_c.in_feature_num); ++i) {
 		printf("\t");
-		for (int j = 0; j < MIN(4, parameter_c.out_feature_num); ++j) {
+		for (j = 0; j < MIN(4, parameter_c.out_feature_num); ++j) {
 			printf("%.2f\t", parameter_c.weights[i][j]);
 		}
 		if (parameter_c.out_feature_num > 4)
@@ -344,7 +350,7 @@ void print_parameter (parameter_t parameter_c) {
 	}
 	if (parameter_c.in_feature_num > 4){
 		printf("\t.\n\t.\n\t.\n\t");
-		for (int j = 0; j < MIN(4, parameter_c.out_feature_num); ++j) {
+		for (j = 0; j < MIN(4, parameter_c.out_feature_num); ++j) {
 			printf("%.2f\t", parameter_c.weights[parameter_c.in_feature_num-1][j]);
 		}
 		if (parameter_c.out_feature_num > 4)
