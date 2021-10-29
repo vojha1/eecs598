@@ -7,8 +7,8 @@ Graph Covolutional Network C implementation
 2) CD to the repo directory:
 `cd GCN`
 
-1) Build the executable code:
+3) Build the executable code:
 `./build`
 
-2) Run the GCN:
+4) Run the GCN:
 `sbatch run_test cora # citeseer, reddit`
