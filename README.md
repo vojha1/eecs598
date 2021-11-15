@@ -7,7 +7,11 @@ Graph Covolutional Network C implementation
 2) The starting CUDA file is in project.cu
 
 3) Build the executable code:
-'nvcc project.cu utilities.c kernels.c'
+'nvcc project.cu utilities.c kernels.c' -> Parallel version
+         or 
+'nvcc main.c utilities.c kernels.c' -> Serial version
 
-4) Run the GCN:
+5) Run the GCN:
 './a.out cora #citeseer, reddit'
+
+
