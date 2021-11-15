@@ -202,8 +202,10 @@ parameter_t parameter_parser(int input_nodes, int output_nodes, char* weight_f, 
 
 	parameter_c.biasses = (float*) malloc (output_nodes * sizeof(float));
 	parameter_c.weights = (float**) malloc (input_nodes * sizeof(float*));
-	for (i = 0; i < input_nodes; ++i) {
-		parameter_c.weights[i] = (float*) malloc (output_nodes * sizeof(float));
+	float *t0 = malloc(input_nodes * output_nodes * sizeof (float));  //New array which is contigious
+	for (i = 0; i < input_nodes; ++i) 
+	{
+		parameter_c.weights[i] = t0 + i*output_nodes ; //(float*) malloc (output_nodes * sizeof(float));
 	}
 	parameter_c.in_feature_num = input_nodes;
 	parameter_c.out_feature_num = output_nodes;
