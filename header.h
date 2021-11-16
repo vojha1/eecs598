@@ -20,8 +20,14 @@ typedef struct spec_t {
 	int labels;
 } spec_t;
 
+// typedef struct feature_t {
+// 	float** features;
+// 	int feature_num;
+// 	int node_num;
+// } feature_t;
+//change to 1d array
 typedef struct feature_t {
-	float** features;
+	float* features;
 	int feature_num;
 	int node_num;
 } feature_t;

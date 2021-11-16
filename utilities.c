@@ -72,10 +72,11 @@ feature_t feature_parser(spec_t spec_c, char* feature_f) {
 
 	feature_c.feature_num = spec_c.features;
 	feature_c.node_num = spec_c.nodes;
-	feature_c.features = (float**) malloc ((spec_c.features) * sizeof(float*));
-	for (i = 0; i < spec_c.features; ++i) {
-		feature_c.features[i] = (float*) malloc ((spec_c.nodes) * sizeof(float)); 
-	}
+	printf("in paser, feature num = %d, node num = %d\n", spec_c.features, spec_c.nodes);
+	feature_c.features = (float*) malloc ((spec_c.features*spec_c.nodes) * sizeof(float));
+	// for (i = 0; i < spec_c.features; ++i) {
+	// 	feature_c.features[i] = (float*) malloc ((spec_c.nodes) * sizeof(float)); 
+	// }
 
 	fp = fopen(feature_f, "r");
     if (fp == NULL) {
@@ -87,7 +88,8 @@ feature_t feature_parser(spec_t spec_c, char* feature_f) {
 		char * feature = strtok(line, " \t\n");
 		feature_idx = 0;
 		while(feature != NULL) {
-			feature_c.features[feature_idx][node_idx] = atof(feature);
+			feature_c.features[feature_idx*feature_c.node_num + node_idx] = atof(feature);
+			// feature_c.features[feature_idx][node_idx] = atof(feature);
 			feature = strtok(NULL, " \t\n");
 			feature_idx++;
 		}
@@ -265,30 +267,30 @@ void print_spec (spec_t spec_c) {
 	printf("# of nodes: %d, edges: %d, features: %d, hidden layers: %d, labels: %d\n", spec_c.nodes, spec_c.edges, spec_c.features, spec_c.hidden, spec_c.labels);
 }
 
-void print_features (feature_t feature_c) {
-	int i, j;
-	printf("features[%d][%d]: \n", feature_c.feature_num, feature_c.node_num);
-	for (i = 0; i < MIN(4, feature_c.feature_num); ++i) {
-		printf("\t");
-		for (j = 0; j < MIN(4, feature_c.node_num); ++j) {
-			printf("%.2f\t", feature_c.features[i][j]);
-		}
-		if (feature_c.node_num > 4)
-			printf("...\t%.2f\n", feature_c.features[i][feature_c.node_num-1]);
-		else
-			printf("\n");
-	}
-	if (feature_c.feature_num > 4){
-		printf("\t.\n\t.\n\t.\n\t");
-		for (j = 0; j < MIN(4, feature_c.node_num); ++j) {
-			printf("%.2f\t", feature_c.features[feature_c.feature_num-1][j]);
-		}
-		if (feature_c.node_num > 4)
-			printf("...\t%.2f\n", feature_c.features[feature_c.feature_num-1][feature_c.node_num-1]);
-		else
-			printf("\n");
-	}
-}
+// void print_features (feature_t feature_c) {
+// 	int i, j;
+// 	printf("features[%d][%d]: \n", feature_c.feature_num, feature_c.node_num);
+// 	for (i = 0; i < MIN(4, feature_c.feature_num); ++i) {
+// 		printf("\t");
+// 		for (j = 0; j < MIN(4, feature_c.node_num); ++j) {
+// 			printf("%.2f\t", feature_c.features[i][j]);
+// 		}
+// 		if (feature_c.node_num > 4)
+// 			printf("...\t%.2f\n", feature_c.features[i][feature_c.node_num-1]);
+// 		else
+// 			printf("\n");
+// 	}
+// 	if (feature_c.feature_num > 4){
+// 		printf("\t.\n\t.\n\t.\n\t");
+// 		for (j = 0; j < MIN(4, feature_c.node_num); ++j) {
+// 			printf("%.2f\t", feature_c.features[feature_c.feature_num-1][j]);
+// 		}
+// 		if (feature_c.node_num > 4)
+// 			printf("...\t%.2f\n", feature_c.features[feature_c.feature_num-1][feature_c.node_num-1]);
+// 		else
+// 			printf("\n");
+// 	}
+// }
 
 void print_labels (spec_t spec_c, label_t label_c) {
 	int i;
@@ -375,9 +377,9 @@ GCN_t GCN_parser (char* dataset) {
 	print_spec(GCN_c.spec_c);
 #endif
 	GCN_c.feature_c = feature_parser(GCN_c.spec_c, str_concat(DATASET_DIR, dataset, "_ds/features.txt"));
-#if DEBUG
-	print_features(GCN_c.feature_c);
-#endif
+// #if DEBUG
+// 	print_features(GCN_c.feature_c);
+// #endif
 	GCN_c.label_c = label_parser(GCN_c.spec_c, str_concat(DATASET_DIR, dataset, "_ds/labels.txt"));
 #if DEBUG
 	print_labels(GCN_c.spec_c, GCN_c.label_c);
