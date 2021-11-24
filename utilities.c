@@ -73,9 +73,17 @@ feature_t feature_parser(spec_t spec_c, char* feature_f) {
 	feature_c.feature_num = spec_c.features;
 	feature_c.node_num = spec_c.nodes;
 	feature_c.features = (float**) malloc ((spec_c.features) * sizeof(float*));
-	for (i = 0; i < spec_c.features; ++i) {
-		feature_c.features[i] = (float*) malloc ((spec_c.nodes) * sizeof(float)); 
-	}
+        printf("%d \n",spec_c.nodes);	
+	float *t1 = malloc(spec_c.features * spec_c.nodes * sizeof (float));  //New array which is contigious
+       for (i = 0; i < spec_c.features; ++i)
+       {
+               feature_c.features[i] = t1 + i*spec_c.nodes ; //(float*) malloc (output_nodes * sizeof(float));
+	  //     printf("%p \n",feature_c.features[i]);
+       }
+
+//	for (i = 0; i < spec_c.features; ++i) {
+//		feature_c.features[i] = (float*) malloc ((spec_c.nodes) * sizeof(float)); 
+//	}
 
 	fp = fopen(feature_f, "r");
     if (fp == NULL) {

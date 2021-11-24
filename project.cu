@@ -102,7 +102,9 @@ int main(int argc, char const *argv[]) {
 	feature_t feature_c;	
 	//CUDA Code section
 	//Add commands for profiling -> Look into this -> Lec 17.pdf
-	//Aggregation kernal
+	
+	
+	//1st Aggregation kernal
         int *device_graph_indexes; //device input graph indexs(1st aggregation)
         int *device_graph_neighbours; //device input graph indexs(1st aggregation)
         float *device_feature_cata_in; //device input feature data(1st aggregation)
@@ -140,17 +142,21 @@ int main(int argc, char const *argv[]) {
 	
 	cudaError_t err = cudaGetLastError();
 	if ( err != cudaSuccess )
-     {
-        printf("CUDA Error: %s\n", cudaGetErrorString(err));
+     	{
+        	printf("CUDA Error: %s\n", cudaGetErrorString(err));
         // Possibly: exit(-1) if program cannot continue....
-     }
+     	}
         cudaDeviceSynchronize();
         cudaMemcpy(feature_c.features[0], device_feature_cata_out, feature_num * node_num * sizeof(float), cudaMemcpyDeviceToHost);
         cudaDeviceSynchronize();
 	
 
-	cudaFree(device_feature_cata_in);
-	cudaFree(device_feature_cata_out);
+	//cudaFree(device_feature_cata_in);
+	//cudaFree(device_feature_cata_out);
+
+	//End of 1st aggregation kernal
+	//1st combination kernal
+
 	//Combination kernal
 	//This is only for testing 
 //	feature_c = aggregation(GCN_c.graph_c, GCN_c.feature_c);
@@ -216,30 +222,41 @@ int main(int argc, char const *argv[]) {
 	cudaFree(device_parameter_bias);
 	cudaFree(in_feature);
 	cudaFree(out_feature);
-
+	//End of 1st combination kernal
+        //2nd aggregation kernal
+ 
+	/*
 	//Aggregation kernal
-	
-/*	
-	int gdx1 = feature_c.feature_num/block_size;
+        
+	float *device_feature_data_in_2;
+        float *device_feature_data_out_2;
+        cudaMalloc(&device_feature_data_in_2, feature_c.feature_num * feature_c.node_num * sizeof(float));
+        cudaMalloc(&device_feature_data_out_2, feature_c.feature_num * feature_c.node_num * sizeof(float));
+        cudaMemcpy(device_feature_data_in_2, feature_c.features[0], feature_c.feature_num * feature_c.node_num * sizeof(float), cudaMemcpyHostToDevice);
+        block_size = AGGR_BLOCK_SIZE; //set to 4 because of shared memory size limit
+        gdx = feature_c.feature_num/block_size;
         // int gdx = feature_num; // for v3
-       	if(feature_c.feature_num % block_size != 0) gdx1++;
-	dim3 gd1(gdx1, 1, 1);
-	cudaMalloc(&device_feature_cata_in, feature_c.feature_num * node_num * sizeof(int));
-	cudaMalloc(&device_feature_cata_out, feature_c.feature_num * node_num * sizeof(int));
-	cudaMemcpy(device_feature_cata_in, feature_c.features[0], feature_c.feature_num *node_num * sizeof(float), cudaMemcpyHostToDevice);
-        aggregation_gpu<<<gd1, bd>>>(device_graph_indexes, device_graph_neighbours, device_feature_cata_in, device_feature_cata_out, feature_c.feature_num, node_num);
+        if(feature_c.feature_num % block_size != 0) gdx++;
 
-	if ( err != cudaSuccess )
+        gd.x = gdx;
+        bd.x = block_size;
+        aggregation_gpu<<<gd, bd>>>(device_graph_indexes, device_graph_neighbours, device_feature_data_in_2, device_feature_data_out_2, feature_c.feature_num, feature_c.node_num);
+        //2nd aggregation end//
+//        cudaError_t err = cudaGetLastError();
+
+     if ( err != cudaSuccess )
      {
         printf("CUDA Error: %s\n", cudaGetErrorString(err));
         // Possibly: exit(-1) if program cannot continue....
      }
         cudaDeviceSynchronize();
-        cudaMemcpy(feature_c.features[0], device_feature_cata_out, feature_c.feature_num * feature_c.node_num * sizeof(float), cudaMemcpyDeviceToHost);
-        cudaDeviceSynchronize();
+        cudaMemcpy(feature_c.features[0], device_feature_data_out_2, feature_c.feature_num * feature_c.node_num * sizeof(float), cudaMemcpyDeviceToHost);
 
-       */ 
-	
+		
+
+	//End of 2nd aggregation kernal
+        //2nd combination kernal
+	*/
         //Combination kernal
 	feature_c = aggregation(GCN_c.graph_c, feature_c);
 
