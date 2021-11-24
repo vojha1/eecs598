@@ -8,8 +8,33 @@ extern "C" {
 	#include "utilities.h"
 }
 
-//Aggregation function
+#define TILE_WIDTH 32
+#define AGGR_BLOCK_SIZE 4
+#define NODE_NUM 2708
+#define NEIGHBOURS 10556
 
+//Aggregation function
+__global__ void aggregation_gpu(int *graph_c_indexes, int *graph_c_neighbours, float *in_feature_cata, float *out_feature_cata, int feature_num_in, int node_num_in){
+        //printf("in gpu check3\n");
+
+        int idx = blockDim.x * blockIdx.x + threadIdx.x;
+
+    int feature_num = feature_num_in;
+        int node_num = node_num_in;
+
+    // if(idx == 0)
+        //      printf("in gpu check0\n");
+        if(idx < feature_num) {
+                for(int i = 0; i<node_num; ++i){
+                        for (int j = graph_c_indexes[i]; j < graph_c_indexes[i + 1]; ++j) {
+                                out_feature_cata[idx * node_num + i] += in_feature_cata[idx * node_num + graph_c_neighbours[j]];
+                        }
+                        out_feature_cata[idx * node_num + i] /= ((float)graph_c_indexes[i + 1] - graph_c_indexes[i]);
+                }
+        }
+        // if(idx == 0)
+        //      printf("in gpu check1\n");
+}
 
 
 //Combination function
@@ -21,17 +46,42 @@ __global__ void combination(float* in_feature, int fea_row, int fea_col,  float*
     //For output feature matrix
     int x = tx + blockDim.x * bx; //Nodes
     int y = ty + blockDim.y * by; //Out Features
+    
+    __shared__ float Atile[TILE_WIDTH*TILE_WIDTH];
+    __shared__ float Btile[TILE_WIDTH*TILE_WIDTH];
+
     float val=0;
+
+    for (int i=0; i<((para_in+TILE_WIDTH-1)/TILE_WIDTH);i++){
+          if(x<fea_col && (i*TILE_WIDTH+ty)<fea_row)      Atile[ty +tx*TILE_WIDTH] = in_feature[(ty +i*TILE_WIDTH)*fea_col + x ];
+          else Atile[ty +tx*TILE_WIDTH] = 0.0;
+
+          if(y<para_out && (i*TILE_WIDTH+tx) <para_in)     Btile[ty +tx*TILE_WIDTH] = weight[(i*TILE_WIDTH+tx)*para_out+  y];
+          else Btile[ty +tx*TILE_WIDTH] = 0.0;
+
+          __syncthreads();
+
+          for (int j=0;j<TILE_WIDTH;j++){
+                  val = val + Atile[(tx)*TILE_WIDTH+ j]*Btile[ty + TILE_WIDTH*j]; //y%32*32 , x%8
+          }
+          __syncthreads();
+    }
 
     if(x<fea_col && y<para_out){
 	    out_feature[y*fea_col+x] = bias[y];
-	    for (int k = 0; k < para_in; ++k){
-		    val += in_feature[k*fea_col + x] * weight[k*para_out + y];
-		 //   printf("%d %lf\n",k,in_feature[k*fea_col + x]); //, weight[k*para_out + y]);
-	    }
-	   out_feature[y*fea_col+x] += val;
-	   if(relu) out_feature[y*fea_col+x] = MAX(0.00000, out_feature[y*fea_col+x]);
+	    out_feature[y*fea_col+x] += val;
+            if(relu) out_feature[y*fea_col+x] = MAX(0.00000, out_feature[y*fea_col+x]);
     }
+    
+    //if(x<fea_col && y<para_out){
+//	    out_feature[y*fea_col+x] = bias[y];
+//	    for (int k = 0; k < para_in; ++k){
+//		    val += in_feature[k*fea_col + x] * weight[k*para_out + y];
+		 //   printf("%d %lf\n",k,in_feature[k*fea_col + x]); //, weight[k*para_out + y]);
+//	    }
+//	   out_feature[y*fea_col+x] += val;
+//	   if(relu) out_feature[y*fea_col+x] = MAX(0.00000, out_feature[y*fea_col+x]);
+  //  }
     //__syncthreads();
 }
 
@@ -53,10 +103,57 @@ int main(int argc, char const *argv[]) {
 	//CUDA Code section
 	//Add commands for profiling -> Look into this -> Lec 17.pdf
 	//Aggregation kernal
+        int *device_graph_indexes; //device input graph indexs(1st aggregation)
+        int *device_graph_neighbours; //device input graph indexs(1st aggregation)
+        float *device_feature_cata_in; //device input feature data(1st aggregation)
+        float *device_feature_cata_out; //device output feature data(1st aggregation)
+	int feature_num = GCN_c.feature_c.feature_num;
+        int node_num = GCN_c.feature_c.node_num;
+        int indexs_num = GCN_c.spec_c.nodes+1;
+        int neighbours_num = GCN_c.spec_c.edges;;
 
+        feature_c.feature_num = feature_num;
+        feature_c.node_num = node_num;
+        feature_c.features = (float **)malloc(feature_num * sizeof(float*));
+        float *t0 = (float *) malloc(feature_num * node_num * sizeof (float));
+        for (int i = 0; i < feature_num; ++i) {
+                // feature_c.features[i] = (float*) malloc ((spec_c.nodes) * sizeof(float));
+                feature_c.features[i] = t0 + i * node_num;
+        }
+	cudaMalloc(&device_graph_indexes, indexs_num * sizeof(int));
+        cudaMalloc(&device_graph_neighbours, neighbours_num * sizeof(int));
+        cudaMalloc(&device_feature_cata_in, feature_num * node_num * sizeof(int));
+        cudaMalloc(&device_feature_cata_out, feature_num * node_num * sizeof(int));
+
+        cudaMemcpy(device_graph_indexes, GCN_c.graph_c.indexes, indexs_num * sizeof(int), cudaMemcpyHostToDevice);
+        cudaMemcpy(device_graph_neighbours, GCN_c.graph_c.neighbours, neighbours_num * sizeof(int), cudaMemcpyHostToDevice);
+        cudaMemcpy(device_feature_cata_in, GCN_c.feature_c.features[0], feature_num * node_num * sizeof(float), cudaMemcpyHostToDevice);
+	
+	int block_size = AGGR_BLOCK_SIZE; //set to 4 because of shared memory size limit
+        int gdx = feature_num/block_size;
+        // int gdx = feature_num; // for v3
+        if(feature_num % block_size != 0) gdx++;
+        dim3 gd(gdx, 1, 1);
+        dim3 bd(block_size, 1, 1);
+
+        aggregation_gpu<<<gd, bd>>>(device_graph_indexes, device_graph_neighbours, device_feature_cata_in, device_feature_cata_out, feature_num, node_num);
+	
+	cudaError_t err = cudaGetLastError();
+	if ( err != cudaSuccess )
+     {
+        printf("CUDA Error: %s\n", cudaGetErrorString(err));
+        // Possibly: exit(-1) if program cannot continue....
+     }
+        cudaDeviceSynchronize();
+        cudaMemcpy(feature_c.features[0], device_feature_cata_out, feature_num * node_num * sizeof(float), cudaMemcpyDeviceToHost);
+        cudaDeviceSynchronize();
+	
+
+	cudaFree(device_feature_cata_in);
+	cudaFree(device_feature_cata_out);
 	//Combination kernal
 	//This is only for testing 
-	feature_c = aggregation(GCN_c.graph_c, GCN_c.feature_c);
+//	feature_c = aggregation(GCN_c.graph_c, GCN_c.feature_c);
 
 	//Timing 
 	struct timeval stop, start;
@@ -95,39 +192,61 @@ int main(int argc, char const *argv[]) {
 	//Checking the solution of the combination kernal
 	//Remove later
 	gettimeofday(&start, NULL);
-	feature_t  feature_check = combination(feature_c, GCN_c.l1_parameter_c, true);
+	//feature_t  feature_check = combination(feature_c, GCN_c.l1_parameter_c, true);
 	gettimeofday(&stop, NULL);
 	float secs2 = (double)(stop.tv_usec - start.tv_usec) / 1000000 + (double)(stop.tv_sec - start.tv_sec);
 	
        	gettimeofday(&start, NULL);
-	//Update feature_c and copy the feaatures values back into CPU
-        feature_c.feature_num = l1_para_out;
+	//Update feature_c and copy the feaatures values back 
+	feature_c.feature_num = l1_para_out;
 	cudaMemcpy(feature_c.features[0],out_feature,(feature_c.node_num*l1_para_out)*sizeof(float), cudaMemcpyDeviceToHost); 
 	gettimeofday(&stop, NULL);
 	float secs3 = (double)(stop.tv_usec - start.tv_usec) / 1000000 + (double)(stop.tv_sec - start.tv_sec);
 
 	//Testing the combination kernal 
 	// Remove later	
-        //for(int i=0; i<100; i++){
+       // for(int i=0; i<100; i++){
         //      printf("%d %lf %lf \n",i,feature_check.features[4][i], feature_c.features[4][i]); //feature_c.features[13][i]);
-        //}
+       // }
 
 	printf("CPU Time: %f sec\n",secs2);
 	printf("GPU Time: %f sec\n",secs1+secs3);
-
+	//exit(0);
 	cudaFree(device_parameter_weight);
 	cudaFree(device_parameter_bias);
 	cudaFree(in_feature);
 	cudaFree(out_feature);
+
 	//Aggregation kernal
+	
+/*	
+	int gdx1 = feature_c.feature_num/block_size;
+        // int gdx = feature_num; // for v3
+       	if(feature_c.feature_num % block_size != 0) gdx1++;
+	dim3 gd1(gdx1, 1, 1);
+	cudaMalloc(&device_feature_cata_in, feature_c.feature_num * node_num * sizeof(int));
+	cudaMalloc(&device_feature_cata_out, feature_c.feature_num * node_num * sizeof(int));
+	cudaMemcpy(device_feature_cata_in, feature_c.features[0], feature_c.feature_num *node_num * sizeof(float), cudaMemcpyHostToDevice);
+        aggregation_gpu<<<gd1, bd>>>(device_graph_indexes, device_graph_neighbours, device_feature_cata_in, device_feature_cata_out, feature_c.feature_num, node_num);
 
+	if ( err != cudaSuccess )
+     {
+        printf("CUDA Error: %s\n", cudaGetErrorString(err));
+        // Possibly: exit(-1) if program cannot continue....
+     }
+        cudaDeviceSynchronize();
+        cudaMemcpy(feature_c.features[0], device_feature_cata_out, feature_c.feature_num * feature_c.node_num * sizeof(float), cudaMemcpyDeviceToHost);
+        cudaDeviceSynchronize();
 
+       */ 
+	
         //Combination kernal
-	
-	
-	//Analyzer kernal
 	feature_c = aggregation(GCN_c.graph_c, feature_c);
-        
+
+       
+//	for (int i=0;i<20;i++) printf("%lf %lf \n",feature_c.features[0][i],feature_d.features[0][i]);
+       
+//	exit(0);	
 	//Timing
         gettimeofday(&start, NULL);
 
@@ -160,7 +279,7 @@ int main(int argc, char const *argv[]) {
         //Checking the solution of the combination kernal
         //Remove later
         gettimeofday(&start, NULL);
-        feature_check = combination(feature_c, GCN_c.l2_parameter_c, false);
+        //feature_check = combination(feature_c, GCN_c.l2_parameter_c, false);
         gettimeofday(&stop, NULL);
         secs2 = (double)(stop.tv_usec - start.tv_usec) / 1000000 + (double)(stop.tv_sec - start.tv_sec);
 
@@ -186,7 +305,7 @@ int main(int argc, char const *argv[]) {
         cudaFree(out_feature);
 
 	
-	//feature_c = combination(feature_c, GCN_c.l2_parameter_c, false);
+//	feature_c = combination(feature_c, GCN_c.l2_parameter_c, false);
         analyzer(feature_c, GCN_c.label_c);
 	return 0;
 }
