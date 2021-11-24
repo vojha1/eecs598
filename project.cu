@@ -267,18 +267,18 @@ int main(int argc, char const *argv[]) {
 	cudaDeviceSynchronize();
 	
 	// for debug start//
-	FILE *result_file;
-	result_file = fopen("/home/wftseng/EECS598_GPU_Final_Project/eecs598/result/first_aggregation_result_gpu_2", "w+");
+	// FILE *result_file;
+	// result_file = fopen("/home/wftseng/EECS598_GPU_Final_Project/eecs598/result/first_aggregation_result_gpu_2", "w+");
 	
-	if(result_file == NULL){
-		printf("error opening file in ./result/first_aggregation_result_gpu_2\n");
-		return -1;
-	}
-	for(int i=0; i<feature_c.feature_num; ++i)
-		for(int j=0; j<feature_c.node_num; ++j)
-			fprintf(result_file, "%f\n", feature_c.features[i][j]);
-	fclose(result_file);
-	printf("finish_writing the result for 2nd aggregation\n");
+	// if(result_file == NULL){
+	// 	printf("error opening file in ./result/first_aggregation_result_gpu_2\n");
+	// 	return -1;
+	// }
+	// for(int i=0; i<feature_c.feature_num; ++i)
+	// 	for(int j=0; j<feature_c.node_num; ++j)
+	// 		fprintf(result_file, "%f\n", feature_c.features[i][j]);
+	// fclose(result_file);
+	// printf("finish_writing the result for 2nd aggregation\n");
 
 	//Add commands for profiling -> Look into this -> Lec 17.pdf
 	//CUDA_PROFILE
