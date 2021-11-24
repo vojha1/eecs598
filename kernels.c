@@ -45,14 +45,20 @@ feature_t combination (feature_t in_feature_c, parameter_t parameter_c, bool rel
 	out_feature_c.node_num = in_feature_c.node_num;
 	out_feature_c.feature_num = parameter_c.out_feature_num;
 	out_feature_c.features = (float**) malloc (parameter_c.out_feature_num * sizeof(float*));
+	float *t0 = (float*) malloc (parameter_c.out_feature_num *in_feature_c.node_num * sizeof(float));
 	for (i = 0; i < parameter_c.out_feature_num; ++i) {
-		out_feature_c.features[i] = (float*) malloc (in_feature_c.node_num * sizeof(float));
+		out_feature_c.features[i] = t0 + i * in_feature_c.node_num;
 	}
+	// out_feature_c.features = (float**) malloc (parameter_c.out_feature_num * sizeof(float*));
+	// for (i = 0; i < parameter_c.out_feature_num; ++i) {
+	// 	out_feature_c.features[i] = (float*) malloc (in_feature_c.node_num * sizeof(float));
+	// }
 
 	for (i = 0; i < in_feature_c.node_num; ++i) {
 		printf("\r%.2f%% Completed!", (float)i * 100.00 / (float)in_feature_c.node_num);
 	    fflush(stdout);
 		for (j = 0; j < parameter_c.out_feature_num; ++j) {
+			
 			out_feature_c.features[j][i] = parameter_c.biasses[j];
 			for (k = 0; k < parameter_c.in_feature_num; ++k) {
 				out_feature_c.features[j][i] += in_feature_c.features[k][i] * parameter_c.weights[k][j];
@@ -62,7 +68,7 @@ feature_t combination (feature_t in_feature_c, parameter_t parameter_c, bool rel
 		}
 	}
 	printf("\r\t\t\t\t\t\r");
-	
+
 	return out_feature_c;
 }
 

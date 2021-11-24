@@ -134,81 +134,127 @@ int main(int argc, char const *argv[]) {
 	}
 	printf("start paser\n");
 	GCN_t GCN_c = GCN_parser((char*)argv[1]);
-	feature_t feature_c; 
-	//Add host and device variables here
+	// feature_t feature_c; 
+	// //Add host and device variables here
 	int *device_graph_indexes; //device input graph indexs(1st aggregation)
 	int *device_graph_neighbours; //device input graph indexs(1st aggregation)
-	float *device_feature_data_in; //device input feature data(1st aggregation)
-	float *device_feature_data_out; //device output feature data(1st aggregation)
-	//float *host_feature_data_out;
-	//feature_t *host_out_feature_c; //host output feature (1st aggregation)
+	// float *device_feature_data_in; //device input feature data(1st aggregation)
+	// float *device_feature_data_out; //device output feature data(1st aggregation)
+	// //float *host_feature_data_out;
+	// //feature_t *host_out_feature_c; //host output feature (1st aggregation)
 
 	
-	//Serial code which will be used for comparision
-	//feature_c = aggregation(GCN_c.graph_c, GCN_c.feature_c);
-	//feature_c = combination(feature_c, GCN_c.l1_parameter_c, true);
-	//feature_c = aggregation(GCN_c.graph_c, feature_c);
-	//feature_c = combination(feature_c, GCN_c.l2_parameter_c, false);
-	//analyzer(feature_c, GCN_c.label_c);
-	//End of serial code
+	// //Serial code which will be used for comparision
+	// //feature_c = aggregation(GCN_c.graph_c, GCN_c.feature_c);
+	// //feature_c = combination(feature_c, GCN_c.l1_parameter_c, true);
+	// //feature_c = aggregation(GCN_c.graph_c, feature_c);
+	// //feature_c = combination(feature_c, GCN_c.l2_parameter_c, false);
+	// //analyzer(feature_c, GCN_c.label_c);
+	// //End of serial code
 
 	
-	//CUDA Code section
-	//1st aggregation start//
-	// printf("check0\n");
-	int feature_num = GCN_c.feature_c.feature_num;
-	int node_num = GCN_c.feature_c.node_num;
+	// //CUDA Code section
+	// //1st aggregation start//
+	// int feature_num = GCN_c.feature_c.feature_num;
+	// int node_num = GCN_c.feature_c.node_num;
 	int indexs_num = GCN_c.spec_c.nodes+1;
 	int neighbours_num = GCN_c.spec_c.edges;;
 
-	feature_c.feature_num = feature_num;
-	feature_c.node_num = node_num;
-	feature_c.features = (float **)malloc(feature_num * sizeof(float*));
-	float *t0 = (float *) malloc(feature_num * node_num * sizeof (float));
-	for (int i = 0; i < feature_num; ++i) {
-		// feature_c.features[i] = (float*) malloc ((spec_c.nodes) * sizeof(float));
-		feature_c.features[i] = t0 + i * node_num;  
-	}
+	// feature_c.feature_num = feature_num;
+	// feature_c.node_num = node_num;
+	// feature_c.features = (float **)malloc(feature_num * sizeof(float*));
+	// float *t0 = (float *) malloc(feature_num * node_num * sizeof (float));
+	// for (int i = 0; i < feature_num; ++i) {
+	// 	// feature_c.features[i] = (float*) malloc ((spec_c.nodes) * sizeof(float));
+	// 	feature_c.features[i] = t0 + i * node_num;  
+	// }
 
-	//host_feature_data_out = (float *)malloc(feature_num * node_num * sizeof(float));
+	// //host_feature_data_out = (float *)malloc(feature_num * node_num * sizeof(float));
 
 	cudaMalloc(&device_graph_indexes, indexs_num * sizeof(int));
 	cudaMalloc(&device_graph_neighbours, neighbours_num * sizeof(int));
-	cudaMalloc(&device_feature_data_in, feature_num * node_num * sizeof(int));
-	cudaMalloc(&device_feature_data_out, feature_num * node_num * sizeof(int));
+	// cudaMalloc(&device_feature_data_in, feature_num * node_num * sizeof(int));
+	// cudaMalloc(&device_feature_data_out, feature_num * node_num * sizeof(int));
 
 	cudaMemcpy(device_graph_indexes, GCN_c.graph_c.indexes, indexs_num * sizeof(int), cudaMemcpyHostToDevice);
 	cudaMemcpy(device_graph_neighbours, GCN_c.graph_c.neighbours, neighbours_num * sizeof(int), cudaMemcpyHostToDevice);
-	cudaMemcpy(device_feature_data_in, GCN_c.feature_c.features[0], feature_num * node_num * sizeof(float), cudaMemcpyHostToDevice);
+	// cudaMemcpy(device_feature_data_in, GCN_c.feature_c.features[0], feature_num * node_num * sizeof(float), cudaMemcpyHostToDevice);
 
-	//printf("check, feature num = %d, node num = %d\n", feature_num, node_num);
-	// cudaMalloc(&device_in_feature_c, sizeof(feature_t));
-	// cudaMalloc(&device_in_feature_c->features,  feature_num * node_num * sizeof(float));
-	// printf("check1\n");
-	// cudaMemcpy(device_in_feature_c, &GCN_c.feature_c, sizeof(feature_t), cudaMemcpyHostToDevice);
-	// printf("check2\n");
-	// for(int i=0; i<10; ++i)
-	// 	printf("%f ", GCN_c.feature_c.features[i]);
-	// printf("\n");
-	// cudaMemcpy(device_in_feature_c->features, GCN_c.feature_c.features, feature_num * node_num * sizeof(float), cudaMemcpyHostToDevice);
-	// printf("check3\n");
-	// cudaMalloc(&device_out_feature_c, sizeof(feature_t));
-	// cudaMalloc(&device_out_feature_c->features,  feature_num * node_num * sizeof(float));
+	// //printf("check, feature num = %d, node num = %d\n", feature_num, node_num);
+	// // cudaMalloc(&device_in_feature_c, sizeof(feature_t));
+	// // cudaMalloc(&device_in_feature_c->features,  feature_num * node_num * sizeof(float));
+	// // printf("check1\n");
+	// // cudaMemcpy(device_in_feature_c, &GCN_c.feature_c, sizeof(feature_t), cudaMemcpyHostToDevice);
+	// // printf("check2\n");
+	// // for(int i=0; i<10; ++i)
+	// // 	printf("%f ", GCN_c.feature_c.features[i]);
+	// // printf("\n");
+	// // cudaMemcpy(device_in_feature_c->features, GCN_c.feature_c.features, feature_num * node_num * sizeof(float), cudaMemcpyHostToDevice);
+	// // printf("check3\n");
+	// // cudaMalloc(&device_out_feature_c, sizeof(feature_t));
+	// // cudaMalloc(&device_out_feature_c->features,  feature_num * node_num * sizeof(float));
 
-	// host_out_feature_c = (feature_t*)malloc(sizeof(feature_t));
-	// host_out_feature_c->features = (float*)malloc(feature_num * node_num * sizeof(float));
+	// // host_out_feature_c = (feature_t*)malloc(sizeof(feature_t));
+	// // host_out_feature_c->features = (float*)malloc(feature_num * node_num * sizeof(float));
 	
 	int block_size = AGGR_BLOCK_SIZE; //set to 4 because of shared memory size limit
-	int gdx = feature_num/block_size;
+	int gdx = GCN_c.feature_c.feature_num/block_size;
 	// int gdx = feature_num; // for v3
-	if(feature_num % block_size != 0) gdx++;
+	if(GCN_c.feature_c.feature_num % block_size != 0) gdx++;
 	dim3 gd(gdx, 1, 1);
 	dim3 bd(block_size, 1, 1);
 
-	aggregation_gpu<<<gd, bd>>>(device_graph_indexes, device_graph_neighbours, device_feature_data_in, device_feature_data_out, feature_num, node_num);
-	// aggregation_gpu_tile<<<gd, bd>>>(device_graph_indexes, device_graph_neighbours, device_feature_data_in, device_feature_data_out, feature_num, node_num);
-	// aggregation_gpu_tile_v2<<<gd, bd>>>(device_graph_indexes, device_graph_neighbours, device_feature_data_in, device_feature_data_out, feature_num, node_num);
-	// aggregation_gpu_tile_v3<<<gd, bd>>>(device_graph_indexes, device_graph_neighbours, device_feature_data_in, device_feature_data_out, feature_num, node_num);
+	// aggregation_gpu<<<gd, bd>>>(device_graph_indexes, device_graph_neighbours, device_feature_data_in, device_feature_data_out, feature_num, node_num);
+	// // aggregation_gpu_tile<<<gd, bd>>>(device_graph_indexes, device_graph_neighbours, device_feature_data_in, device_feature_data_out, feature_num, node_num);
+	// // aggregation_gpu_tile_v2<<<gd, bd>>>(device_graph_indexes, device_graph_neighbours, device_feature_data_in, device_feature_data_out, feature_num, node_num);
+	// // aggregation_gpu_tile_v3<<<gd, bd>>>(device_graph_indexes, device_graph_neighbours, device_feature_data_in, device_feature_data_out, feature_num, node_num);
+	// cudaError_t err = cudaGetLastError();
+
+    //  if ( err != cudaSuccess )
+    //  {
+    //     printf("CUDA Error: %s\n", cudaGetErrorString(err));       
+    //     // Possibly: exit(-1) if program cannot continue....
+    //  }
+	// cudaDeviceSynchronize();
+	// cudaMemcpy(feature_c.features[0], device_feature_data_out, feature_num * node_num * sizeof(float), cudaMemcpyDeviceToHost);
+	// cudaDeviceSynchronize();
+	
+	// // for debug start//
+	// FILE *result_file;
+	// result_file = fopen("/home/wftseng/EECS598_GPU_Final_Project/eecs598/result/first_aggregation_result_gpu", "w+");
+	
+	// if(result_file == NULL){
+	// 	printf("error opening file in ./result/first_aggregation_result_gpu\n");
+	// 	return -1;
+	// }
+	// for(int i=0; i<feature_num; ++i)
+	// 	for(int j=0; j<node_num; ++j)
+	// 		fprintf(result_file, "%f\n", feature_c.features[i][j]);
+	// fclose(result_file);
+	// printf("finish_writing the result\n");
+	// // for debug end//
+
+	//1st aggregation end//
+	//2nd aggregation start//
+	
+	feature_t feature_c;
+	feature_c = aggregation(GCN_c.graph_c, GCN_c.feature_c);
+	feature_c = combination(feature_c, GCN_c.l1_parameter_c, true);
+
+	float *device_feature_data_in_2;
+	float *device_feature_data_out_2;
+	cudaMalloc(&device_feature_data_in_2, feature_c.feature_num * feature_c.node_num * sizeof(float));
+	cudaMalloc(&device_feature_data_out_2, feature_c.feature_num * feature_c.node_num * sizeof(float));
+	cudaMemcpy(device_feature_data_in_2, feature_c.features[0], feature_c.feature_num * feature_c.node_num * sizeof(float), cudaMemcpyHostToDevice);
+	block_size = AGGR_BLOCK_SIZE; //set to 4 because of shared memory size limit
+	gdx = feature_c.feature_num/block_size;
+	// int gdx = feature_num; // for v3
+	if(feature_c.feature_num % block_size != 0) gdx++;
+
+	gd.x = gdx;
+	bd.x = block_size;
+	aggregation_gpu<<<gd, bd>>>(device_graph_indexes, device_graph_neighbours, device_feature_data_in_2, device_feature_data_out_2, feature_c.feature_num, feature_c.node_num);
+	//2nd aggregation end//
 	cudaError_t err = cudaGetLastError();
 
      if ( err != cudaSuccess )
@@ -217,25 +263,22 @@ int main(int argc, char const *argv[]) {
         // Possibly: exit(-1) if program cannot continue....
      }
 	cudaDeviceSynchronize();
-	cudaMemcpy(feature_c.features[0], device_feature_data_out, feature_num * node_num * sizeof(float), cudaMemcpyDeviceToHost);
+	cudaMemcpy(feature_c.features[0], device_feature_data_out_2, feature_c.feature_num * feature_c.node_num * sizeof(float), cudaMemcpyDeviceToHost);
 	cudaDeviceSynchronize();
 	
 	// for debug start//
 	FILE *result_file;
-	result_file = fopen("/home/wftseng/EECS598_GPU_Final_Project/eecs598/result/first_aggregation_result_gpu", "w+");
+	result_file = fopen("/home/wftseng/EECS598_GPU_Final_Project/eecs598/result/first_aggregation_result_gpu_2", "w+");
 	
 	if(result_file == NULL){
-		printf("error opening file in ./result/first_aggregation_result_gpu\n");
+		printf("error opening file in ./result/first_aggregation_result_gpu_2\n");
 		return -1;
 	}
-	for(int i=0; i<feature_num; ++i)
-		for(int j=0; j<node_num; ++j)
+	for(int i=0; i<feature_c.feature_num; ++i)
+		for(int j=0; j<feature_c.node_num; ++j)
 			fprintf(result_file, "%f\n", feature_c.features[i][j]);
 	fclose(result_file);
-	printf("finish_writing the result\n");
-	// for debug end//
-
-	//1st aggregation end//
+	printf("finish_writing the result for 2nd aggregation\n");
 
 	//Add commands for profiling -> Look into this -> Lec 17.pdf
 	//CUDA_PROFILE
@@ -246,22 +289,22 @@ int main(int argc, char const *argv[]) {
 	//Transfer information from one host to device 
 	//cudaMemcpy()
 
-	//GPU kernal calls
-	dim3 Dg(1) ;
-	dim3 Db(64);
+	// //GPU kernal calls
+	// dim3 Dg(1) ;
+	// dim3 Db(64);
 	
-	//Testing kernal to see if cuda is working correctly, comment out 
-	check<<<Dg,Db>>>();	
-	cudaDeviceSynchronize();
+	// //Testing kernal to see if cuda is working correctly, comment out 
+	// check<<<Dg,Db>>>();	
+	// cudaDeviceSynchronize();
 	
 	//Aggregation kernal
 
 
 	//Combination kernal
-
+	
 
 	//Aggregation kernal
-
+	
 
         //Combination kernal
 	
