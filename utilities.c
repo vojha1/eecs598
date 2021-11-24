@@ -73,10 +73,12 @@ feature_t feature_parser(spec_t spec_c, char* feature_f) {
 	feature_c.feature_num = spec_c.features;
 	feature_c.node_num = spec_c.nodes;
 	printf("in paser, feature num = %d, node num = %d\n", spec_c.features, spec_c.nodes);
-	feature_c.features = (float*) malloc ((spec_c.features*spec_c.nodes) * sizeof(float));
-	// for (i = 0; i < spec_c.features; ++i) {
-	// 	feature_c.features[i] = (float*) malloc ((spec_c.nodes) * sizeof(float)); 
-	// }
+	feature_c.features = (float**) malloc (spec_c.features * sizeof(float*));
+	float *t0 = malloc(spec_c.features * spec_c.nodes * sizeof (float));
+	for (i = 0; i < spec_c.features; ++i) {
+		// feature_c.features[i] = (float*) malloc ((spec_c.nodes) * sizeof(float));
+		feature_c.features[i] = t0 + i * spec_c.nodes;  
+	}
 
 	fp = fopen(feature_f, "r");
     if (fp == NULL) {
@@ -88,8 +90,8 @@ feature_t feature_parser(spec_t spec_c, char* feature_f) {
 		char * feature = strtok(line, " \t\n");
 		feature_idx = 0;
 		while(feature != NULL) {
-			feature_c.features[feature_idx*feature_c.node_num + node_idx] = atof(feature);
-			// feature_c.features[feature_idx][node_idx] = atof(feature);
+			//feature_c.features[feature_idx*feature_c.node_num + node_idx] = atof(feature);
+			feature_c.features[feature_idx][node_idx] = atof(feature);
 			feature = strtok(NULL, " \t\n");
 			feature_idx++;
 		}

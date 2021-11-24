@@ -163,7 +163,12 @@ int main(int argc, char const *argv[]) {
 
 	feature_c.feature_num = feature_num;
 	feature_c.node_num = node_num;
-	feature_c.features = (float *)malloc(feature_num * node_num * sizeof(float));
+	feature_c.features = (float **)malloc(feature_num * sizeof(float*));
+	float *t0 = (float *) malloc(feature_num * node_num * sizeof (float));
+	for (int i = 0; i < feature_num; ++i) {
+		// feature_c.features[i] = (float*) malloc ((spec_c.nodes) * sizeof(float));
+		feature_c.features[i] = t0 + i * node_num;  
+	}
 
 	//host_feature_data_out = (float *)malloc(feature_num * node_num * sizeof(float));
 
@@ -174,7 +179,7 @@ int main(int argc, char const *argv[]) {
 
 	cudaMemcpy(device_graph_indexes, GCN_c.graph_c.indexes, indexs_num * sizeof(int), cudaMemcpyHostToDevice);
 	cudaMemcpy(device_graph_neighbours, GCN_c.graph_c.neighbours, neighbours_num * sizeof(int), cudaMemcpyHostToDevice);
-	cudaMemcpy(device_feature_data_in, GCN_c.feature_c.features, feature_num * node_num * sizeof(float), cudaMemcpyHostToDevice);
+	cudaMemcpy(device_feature_data_in, GCN_c.feature_c.features[0], feature_num * node_num * sizeof(float), cudaMemcpyHostToDevice);
 
 	//printf("check, feature num = %d, node num = %d\n", feature_num, node_num);
 	// cudaMalloc(&device_in_feature_c, sizeof(feature_t));
@@ -212,7 +217,7 @@ int main(int argc, char const *argv[]) {
         // Possibly: exit(-1) if program cannot continue....
      }
 	cudaDeviceSynchronize();
-	cudaMemcpy(feature_c.features, device_feature_data_out, feature_num * node_num * sizeof(float), cudaMemcpyDeviceToHost);
+	cudaMemcpy(feature_c.features[0], device_feature_data_out, feature_num * node_num * sizeof(float), cudaMemcpyDeviceToHost);
 	cudaDeviceSynchronize();
 	
 	// for debug start//
@@ -223,8 +228,9 @@ int main(int argc, char const *argv[]) {
 		printf("error opening file in ./result/first_aggregation_result_gpu\n");
 		return -1;
 	}
-	for(int i=0; i<feature_num*node_num; ++i)
-		fprintf(result_file, "%f\n", feature_c.features[i]);
+	for(int i=0; i<feature_num; ++i)
+		for(int j=0; j<node_num; ++j)
+			fprintf(result_file, "%f\n", feature_c.features[i][j]);
 	fclose(result_file);
 	printf("finish_writing the result\n");
 	// for debug end//
