@@ -30,8 +30,8 @@ __global__ void aggregation_gpu(int *graph_c_indexes, int *graph_c_neighbours, f
                         for (int j = graph_c_indexes[i]; j < graph_c_indexes[i + 1]; ++j) {
                                 out_feature_data[idx * node_num + i] += in_feature_data[idx * node_num + graph_c_neighbours[j]];
                         }
-                        out_feature_data[idx * node_num + i] /= ((float)graph_c_indexes[i + 1] - graph_c_indexes[i]);
-                }
+                        out_feature_data[idx * node_num + i] /= ((float)graph_c_indexes[i + 1] - graph_c_indexes[i]);             
+		}
         }
         // if(idx == 0)
         //      printf("in gpu check1\n");
@@ -129,19 +129,15 @@ int main(int argc, char const *argv[]) {
 
 
 
-	//Combination kernal
-	//This is only for testing 
-//	feature_c = aggregation(GCN_c.graph_c, GCN_c.feature_c);
-
-	
-	//Timing 
+	//Combination kernal	
+	//Timing	
 	struct timeval stop, start;
 	gettimeofday(&start, NULL);
 	
 	//Get parameter sizes
 	int l1_para_in = GCN_c.l1_parameter_c.in_feature_num;
 	int l1_para_out =GCN_c.l1_parameter_c.out_feature_num;
-
+	
 	//Define and allocate  outputs for the combination kernal
 	float *device_parameter_weight, *device_parameter_bias;
 	cudaMalloc((void**)&device_parameter_weight, (l1_para_in*l1_para_out)*sizeof(float));
@@ -157,8 +153,8 @@ int main(int argc, char const *argv[]) {
 		
 	//Define and allocate the output of the combination kernal
 	float *out_feature;
-	cudaMalloc((void**)&out_feature, (feature_c.node_num*l1_para_out)*sizeof(float)); 
-
+	cudaMalloc((void**)&out_feature, (feature_c.node_num*l1_para_out)*sizeof(float));
+	
 	//Define the grid and block sizes and launch the kernal
 	dim3 Dg( ceil(GCN_c.spec_c.nodes/32.0),ceil(l1_para_out/32.0)) ;
         dim3 Db(32,32,1);
@@ -171,10 +167,10 @@ int main(int argc, char const *argv[]) {
 	//Checking the solution of the combination kernal
 	//Remove later
 	gettimeofday(&start, NULL);
-//	feature_t  feature_check = combination(feature_c, GCN_c.l1_parameter_c, true);
-	gettimeofday(&stop, NULL);
-	float secs2 = (double)(stop.tv_usec - start.tv_usec) / 1000000 + (double)(stop.tv_sec - start.tv_sec);
 	
+	//feature_t feature_check = combination(feature_c, GCN_c.l1_parameter_c, true);
+	gettimeofday(&stop, NULL);
+	float secs2 = (double)(stop.tv_usec - start.tv_usec) / 1000000 + (double)(stop.tv_sec - start.tv_sec);	
        	gettimeofday(&start, NULL);
 	//Update feature_c and copy the feaatures values back into CPU
         feature_c.feature_num = l1_para_out;
@@ -182,22 +178,12 @@ int main(int argc, char const *argv[]) {
 	gettimeofday(&stop, NULL);
 	float secs3 = (double)(stop.tv_usec - start.tv_usec) / 1000000 + (double)(stop.tv_sec - start.tv_sec);
 
-	//Testing the combination kernal 
-	// Remove later	
-        //for(int i=0; i<100; i++){
-        //      printf("%d %lf %lf \n",i,feature_check.features[4][i], feature_c.features[4][i]); //feature_c.features[13][i]);
-        //}
-
 	printf("CPU Time: %f sec\n",secs2);
 	printf("GPU Time: %f sec\n",secs1+secs3);
-
-	cudaFree(device_parameter_weight);
-	cudaFree(device_parameter_bias);
-	cudaFree(in_feature);
-	cudaFree(out_feature);
+	
 	
 	//Aggregation kernal
-//	feature_c = combination(feature_c, GCN_c.l1_parameter_c, true);
+ 	//feature_c = combination(feature_c, GCN_c.l1_parameter_c, true);
         float *device_feature_data_in_2;
         float *device_feature_data_out_2;
         cudaMalloc(&device_feature_data_in_2, feature_c.feature_num * feature_c.node_num * sizeof(float));
@@ -211,28 +197,18 @@ int main(int argc, char const *argv[]) {
         gd.x = gdx;
         bd.x = block_size;
         aggregation_gpu<<<gd, bd>>>(device_graph_indexes, device_graph_neighbours, device_feature_data_in_2, device_feature_data_out_2, feature_c.feature_num, feature_c.node_num);
-        //2nd aggregation end//
-//        cudaError_t err = cudaGetLastError();
-
-     if ( err != cudaSuccess )
-     {
-        printf("CUDA Error: %s\n", cudaGetErrorString(err));
-        // Possibly: exit(-1) if program cannot continue....
-     }
+       
+     	if ( err != cudaSuccess )
+     	{
+        	printf("CUDA Error: %s\n", cudaGetErrorString(err));
+        	// Possibly: exit(-1) if program cannot continue....
+    	}
         cudaDeviceSynchronize();
         cudaMemcpy(feature_c.features[0], device_feature_data_out_2, feature_c.feature_num * feature_c.node_num * sizeof(float), cudaMemcpyDeviceToHost);
 
 
-
-
-        //Combination kernal
-	
-	
-	//Analyzer kernal
-	//feature_c = aggregation(GCN_c.graph_c, feature_c);
-        
+        //Combination kernal        
 	//Timing
-       
        	gettimeofday(&start, NULL);
 
         //Get parameter sizes
@@ -261,13 +237,6 @@ int main(int argc, char const *argv[]) {
         gettimeofday(&stop, NULL);
         secs1 = (double)(stop.tv_usec - start.tv_usec) / 1000000 + (double)(stop.tv_sec - start.tv_sec);
 
-        //Checking the solution of the combination kernal
-        //Remove later
-        gettimeofday(&start, NULL);
-//        feature_check = combination(feature_c, GCN_c.l2_parameter_c, false);
-        gettimeofday(&stop, NULL);
-        secs2 = (double)(stop.tv_usec - start.tv_usec) / 1000000 + (double)(stop.tv_sec - start.tv_sec);
-
         gettimeofday(&start, NULL);
         //Update feature_c and copy the feaatures values back into CPU
         feature_c.feature_num = l2_para_out;
@@ -275,22 +244,14 @@ int main(int argc, char const *argv[]) {
         gettimeofday(&stop, NULL);
         secs3 = (double)(stop.tv_usec - start.tv_usec) / 1000000 + (double)(stop.tv_sec - start.tv_sec);
 
-        //Testing the combination kernal
-        // Remove later
-        //for(int i=0; i<100; i++){
-        //      printf("%d %lf %lf \n",i,feature_check.features[4][i], feature_c.features[4][i]); //feature_c.features[13][i]);
-        //}
-
-        printf("CPU Time: %f sec\n",secs2);
         printf("GPU Time: %f sec\n",secs1+secs3);
 
         cudaFree(device_parameter_weight);
         cudaFree(device_parameter_bias);
         cudaFree(in_feature);
         cudaFree(out_feature);
-
 	
-//	feature_c = combination(feature_c, GCN_c.l2_parameter_c, false);
+
         analyzer(feature_c, GCN_c.label_c);
 	return 0;
 }
