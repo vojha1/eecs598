@@ -1,3 +1,0 @@
-rm slur*
-nvcc project_final.cu utilities.c kernels.c
-sbatch run_tests reddit

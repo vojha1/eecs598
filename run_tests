@@ -18,4 +18,5 @@ if [ "$#" -ne 1 ] || { [ "$1" != cora ] && [ "$1" != citeseer ] && [ "$1" != red
     exit 1
 fi
 
-time _build/GCN $1
+time ./a.out $1
+#time _build/GCN $1

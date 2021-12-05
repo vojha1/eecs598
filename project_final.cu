@@ -69,7 +69,6 @@ __global__ void aggregation_gpu(int *graph_c_indexes, int *graph_c_neighbours, f
 
 __global__ void aggregation_gpu_block(int *graph_c_indexes, int *graph_c_neighbours, float *in_feature_data, float *out_feature_data, int feature_num_in, int node_num_in){
 	
-	int tx = threadIdx.x;
 	int bx = blockIdx.x;
 	
 	int th_per_thread = blockDim.x * blockIdx.y + threadIdx.x;
@@ -171,22 +170,22 @@ int main(int argc, char const *argv[]) {
 	cudaMemcpy(device_feature_cata_in, GCN_c.feature_c.features[0], feature_num * node_num * sizeof(float), cudaMemcpyHostToDevice);
 
 
-	int block_size = AGGR_BLOCK_SIZE; //set to 4 because of shared memory size limit
-        int gdx = GCN_c.feature_c.feature_num/block_size;
-	if(GCN_c.feature_c.feature_num % block_size != 0) gdx++;
-        dim3 gd(gdx, 1, 1);
-        dim3 bd(block_size, 1, 1);
-	aggregation_gpu<<<gd, bd>>>(device_graph_indexes, device_graph_neighbours, device_feature_cata_in, device_feature_cata_out, feature_num, node_num);
-
 //	int block_size = AGGR_BLOCK_SIZE; //set to 4 because of shared memory size limit
-//	int gdx = GCN_c.feature_c.feature_num;
-//	int gdy = GCN_c.feature_c.node_num/block_size;
-//	// int gdx = feature_num; // for v3
-//	if(GCN_c.feature_c.node_num % block_size != 0) gdy++;
-//	dim3 gd(gdx, gdy, 1);
-//	dim3 bd(block_size, 1, 1);
-//
-//	aggregation_gpu_block<<<gd, bd>>>(device_graph_indexes, device_graph_neighbours, device_feature_cata_in, device_feature_cata_out, feature_num, node_num);
+//        int gdx = GCN_c.feature_c.feature_num/block_size;
+//	if(GCN_c.feature_c.feature_num % block_size != 0) gdx++;
+//        dim3 gd(gdx, 1, 1);
+//        dim3 bd(block_size, 1, 1);
+//	aggregation_gpu<<<gd, bd>>>(device_graph_indexes, device_graph_neighbours, device_feature_cata_in, device_feature_cata_out, feature_num, node_num);
+
+	int block_size = AGGR_BLOCK_SIZE; //set to 4 because of shared memory size limit
+	int gdx = GCN_c.feature_c.feature_num;
+	int gdy = GCN_c.feature_c.node_num/block_size;
+	// int gdx = feature_num; // for v3
+	if(GCN_c.feature_c.node_num % block_size != 0) gdy++;
+	dim3 gd(gdx, gdy, 1);
+	dim3 bd(block_size, 1, 1);
+
+	aggregation_gpu_block<<<gd, bd>>>(device_graph_indexes, device_graph_neighbours, device_feature_cata_in, device_feature_cata_out, feature_num, node_num);
 
 
         cudaError_t err = cudaGetLastError();
@@ -263,23 +262,23 @@ int main(int argc, char const *argv[]) {
         cudaMalloc(&device_feature_data_out_2, feature_c.feature_num * feature_c.node_num * sizeof(float));
         cudaMemcpy(device_feature_data_in_2, feature_c.features[0], feature_c.feature_num * feature_c.node_num * sizeof(float), cudaMemcpyHostToDevice);
         
-				block_size = AGGR_BLOCK_SIZE; //set to 4 because of shared memory size limit
-        gdx = feature_c.feature_num/block_size;
-        // int gdx = feature_num; // for v3
-        if(feature_c.feature_num % block_size != 0) gdx++;
-
-        gd.x = gdx;
-        bd.x = block_size;
-        aggregation_gpu<<<gd, bd>>>(device_graph_indexes, device_graph_neighbours, device_feature_data_in_2, device_feature_data_out_2, feature_c.feature_num, feature_c.node_num);
-//	block_size = AGGR_BLOCK_SIZE; //set to 4 because of shared memory size limit
-//	gdx = feature_c.feature_num;
-//	gdy = feature_c.node_num/block_size;
-//	// int gdx = feature_num; // for v3
-//	if(feature_c.node_num % block_size != 0) gdy++;
-//	gd.x = gdx;
-//	gd.y = gdy;
-//	bd.x = block_size;
-//        aggregation_gpu_block<<<gd, bd>>>(device_graph_indexes, device_graph_neighbours, device_feature_data_in_2, device_feature_data_out_2, feature_c.feature_num, feature_c.node_num);
+//				block_size = AGGR_BLOCK_SIZE; //set to 4 because of shared memory size limit
+//        gdx = feature_c.feature_num/block_size;
+//        // int gdx = feature_num; // for v3
+//        if(feature_c.feature_num % block_size != 0) gdx++;
+//
+//        gd.x = gdx;
+//        bd.x = block_size;
+//        aggregation_gpu<<<gd, bd>>>(device_graph_indexes, device_graph_neighbours, device_feature_data_in_2, device_feature_data_out_2, feature_c.feature_num, feature_c.node_num);
+	block_size = AGGR_BLOCK_SIZE; //set to 4 because of shared memory size limit
+	gdx = feature_c.feature_num;
+	gdy = feature_c.node_num/block_size;
+	// int gdx = feature_num; // for v3
+	if(feature_c.node_num % block_size != 0) gdy++;
+	gd.x = gdx;
+	gd.y = gdy;
+	bd.x = block_size;
+        aggregation_gpu_block<<<gd, bd>>>(device_graph_indexes, device_graph_neighbours, device_feature_data_in_2, device_feature_data_out_2, feature_c.feature_num, feature_c.node_num);
 			
 
      	if ( err != cudaSuccess )
