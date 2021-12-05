@@ -1,0 +1,11 @@
+2708 
+GPU Time for 1st aggregation: 0.186708 sec
+CPU Time: 0.000001 sec
+GPU Time: 0.003825 sec
+GPU Time for 2nd aggregation: 0.000137 sec
+GPU Time: 0.000103 sec
+Accuracy: 88.55%
+
+real	0m0.415s
+user	0m0.194s
+sys	0m0.192s
